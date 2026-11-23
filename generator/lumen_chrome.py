@@ -179,13 +179,13 @@ def theme_name(tokens: dict, mode: str) -> str:
     return f"Lumen {tokens['meta']['name'] or 'Custom'} {mode.capitalize()}"[:75]
 
 
-def build_manifest(tokens: dict, mode: str, version: str) -> dict:
+def build_manifest(tokens: dict, mode: str, version: str, ntp_image: bool = True) -> dict:
     colors = theme_colors(tokens, mode)
     description = tokens["meta"]["description"] or "A Lumen browser theme."
     if len(description) > 132:
         description = description[:131].rstrip() + "…"
     none = [-1, -1, -1]
-    return {
+    manifest = {
         "manifest_version": 3,
         "name": theme_name(tokens, mode),
         "version": version,
@@ -216,6 +216,11 @@ def build_manifest(tokens: dict, mode: str, version: str) -> dict:
             },
         },
     }
+    if not ntp_image:
+        del manifest["theme"]["images"]["theme_ntp_background"]
+        del manifest["theme"]["properties"]["ntp_background_alignment"]
+        del manifest["theme"]["properties"]["ntp_background_repeat"]
+    return manifest
 
 
 # ------------------------------------------------------------------------------------------
@@ -360,29 +365,38 @@ def icon_image(tokens: dict, mode: str, size: int) -> bytes:
 # Packages
 # ------------------------------------------------------------------------------------------
 
+def default_ntp_image(mode: str, pattern: str, tokens: dict) -> bool:
+    """Chrome treats any new tab image as a photo: white logo, white shortcut titles and a dark
+    scrim at the top. That suits the dark themes; light themes and plain backgrounds skip it."""
+    return mode == "dark" and (tokens.get("glow", True) or pattern == "dots")
+
+
 def default_pattern(tokens: dict) -> str:
     return "dots" if tokens.get("glow", True) else "none"
 
 
 def build_files(tokens: dict, mode: str, version: str, pattern: str | None = None,
-                ntp_size: tuple[int, int] = NTP_SIZE) -> dict[str, bytes]:
+                ntp_size: tuple[int, int] = NTP_SIZE, ntp_image_on: bool | None = None) -> dict[str, bytes]:
     """Every file of one theme package, by its path inside the package."""
     pattern = pattern or default_pattern(tokens)
     if pattern not in PATTERNS:
         raise ValueError(f"pattern must be one of {', '.join(PATTERNS)}")
+    if ntp_image_on is None:
+        ntp_image_on = default_ntp_image(mode, pattern, tokens)
     colors = theme_colors(tokens, mode)
     p = {k: rgb(v) for k, v in tokens["color"][mode].items()}
     d = {k: rgb(v) for k, v in tokens["color"]["dark"].items()}
     strong = 0.10 if mode == "dark" else 0.06
     files = {
-        "manifest.json": manifest_bytes(build_manifest(tokens, mode, version)),
+        "manifest.json": manifest_bytes(build_manifest(tokens, mode, version, ntp_image_on)),
         "images/frame.png": frame_image(colors["frame"], p["accent"], strong if tokens["glow"] else 0),
         "images/frame_inactive.png": frame_image(colors["frame_inactive"], p["accent"], strong / 2 if tokens["glow"] else 0),
         "images/frame_incognito.png": frame_image(colors["frame_incognito"], d["accent"], 0.06 if tokens["glow"] else 0),
         "images/frame_incognito_inactive.png": frame_image(colors["frame_incognito_inactive"], d["accent"], 0),
         "images/toolbar.png": png.solid(*FRAME_SIZE, colors["toolbar"]),
-        "images/ntp_background.png": ntp_image(tokens, mode, pattern, ntp_size),
     }
+    if ntp_image_on:
+        files["images/ntp_background.png"] = ntp_image(tokens, mode, pattern, ntp_size)
     for s in ICON_SIZES:
         files[f"icons/icon{s}.png"] = icon_image(tokens, mode, s)
     return files
@@ -424,6 +438,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--all", action="store_true", help="every preset in presets/, both modes")
     ap.add_argument("--out", required=True, help="output folder")
     ap.add_argument("--pattern", choices=PATTERNS, help="NTP pattern (default: dots when the glow is on)")
+    ap.add_argument("--ntp-image", choices=("auto", "on", "off"), default="auto",
+                    help="new tab background image (auto: dark themes with the light or the dots)")
     ap.add_argument("--no-zip", action="store_true", help="write folders only")
     ap.add_argument("--ntp-size", default=f"{NTP_SIZE[0]}x{NTP_SIZE[1]}", help="NTP image size, WxH")
     args = ap.parse_args(argv)
@@ -454,7 +470,8 @@ def main(argv: list[str] | None = None) -> int:
         jobs.append((slug, tokens))
     for slug, tokens in jobs:
         for mode in ([args.mode] if args.mode else MODES):
-            files = build_files(tokens, mode, version, args.pattern, (w, h))
+            image = None if args.ntp_image == "auto" else args.ntp_image == "on"
+            files = build_files(tokens, mode, version, args.pattern, (w, h), image)
             name = f"lumen-{slug}-{mode}"
             folder = out / name if (args.all or not args.mode) else out
             write_dir(files, folder)

@@ -23,16 +23,24 @@ for (const [name, doc] of Object.entries(py.cases)) {
         console.error(`${name}: problems differ\n  js: ${res.problems}\n  py: ${py.problems[name]}`);
     }
     for (const mode of ["dark", "light"]) {
-        const js = LC.manifestText(res.tokens, mode, "1.2.3");
-        const want = py.manifests[`${name}/${mode}`];
+      for (const pattern of ["dots", "none"]) {
+        if (LC.defaultNtpImage(mode, pattern, res.tokens) !== py.defaults[`${name}/${mode}/${pattern}`]) {
+            failed++;
+            console.error(`${name}/${mode}/${pattern}: default new tab image differs`);
+        }
+      }
+      for (const image of [1, 0]) {
+        const js = LC.manifestText(res.tokens, mode, "1.2.3", Boolean(image));
+        const want = py.manifests[`${name}/${mode}/${image}`];
         if (js !== want) {
             failed++;
             const a = js.split("\n"), b = want.split("\n");
             const i = a.findIndex((l, k) => l !== b[k]);
-            console.error(`${name}/${mode}: manifest differs at line ${i + 1}\n  js: ${a[i]}\n  py: ${b[i]}`);
+            console.error(`${name}/${mode}/${image}: manifest differs at line ${i + 1}\n  js: ${a[i]}\n  py: ${b[i]}`);
         } else {
-            console.log(`ok ${name}/${mode}`);
+            console.log(`ok ${name}/${mode}/${image}`);
         }
+      }
     }
 }
 if (failed) {

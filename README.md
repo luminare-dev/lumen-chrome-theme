@@ -40,8 +40,9 @@ out, with the contrast checked on the way.
 
 - Four presets in two modes each: Luminare, Graphite, Aurora and High contrast, dark and light
   (eight themes). Incognito windows use the preset's dark palette in both.
-- Every theme colours the frame, tabs, toolbar, address field, bookmarks bar and the new tab page;
-  the new tab page gets a soft accent light and an optional dot grid, and a light or dark logo.
+- Every theme colours the frame, tabs, toolbar, address field, bookmarks bar and the new tab page.
+  Dark themes get a soft accent light and a dot grid on the new tab page; light themes keep a
+  plain background, because Chrome draws a white logo on any new tab image.
 - Text pairs are checked against WCAG 2.2 (4.5:1 for text, 3:1 for toolbar icons) in the build.
 - [The customizer](customizer/index.html): one HTML file that works offline and makes no network
   requests. Pick a preset and a mode or set every colour, see a live browser mock-up and download
@@ -86,8 +87,8 @@ See [docs/customize.md](docs/customize.md) for the colour mapping and the option
 
 - A theme cannot follow the system light or dark setting; install the mode you want, or switch by
   loading the other one.
-- Chrome draws some parts itself (menus, the side panel, the new tab search box), so only the
-  colours above follow the theme.
+- Chrome draws some parts itself (menus, the side panel, the new tab search box, the account
+  links at the top right of the new tab page), so only the colours above follow the theme.
 - Previews in the customizer and in `docs/previews/` are drawings; the real look depends on the
   browser version and the operating system.
 
