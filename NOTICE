@@ -1,0 +1,27 @@
+lumen-chrome-theme
+Copyright 2026 Paul Pasaurek
+
+The source code in this repository is licensed under MIT (see the
+LICENSE file). That licence covers the code only.
+
+The names "Luminare Development" and "Luminare", the Luminare logo and mark,
+the name and logo of this project, the README header images, the social
+preview image and all files in docs/brand/, as well as the preview images in
+docs/previews/, are not licensed under MIT or under any other licence in this
+repository. No permission is granted to use them, except as required for
+reasonable and customary use in describing the origin of the work and
+reproducing the content of this NOTICE file. The generated themes contain no
+Luminare logo; their icon is a plain shape in the theme's accent colours.
+
+The images in docs/brand/ contain text set in the Sora typeface, converted to
+outlines. Sora is Copyright 2019 The Sora Project Authors and is licensed
+under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+The font keeps its own licence.
+
+Shared tokens
+presets/ holds copies of the token presets of lumen-hydrodactyl-theme
+(Apache-2.0, same author). They are made available here under MIT by their
+author.
+
+Not affiliated with or endorsed by Google. Chrome and Chromium are named only
+to describe what the themes work with.

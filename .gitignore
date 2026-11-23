@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+# Build output (generator/lumen_chrome.py, generator/preview.py)
+dist/
+previews/
+# Local tool installs
+node_modules/
+# Never commit environment files
+.env
+.env.*
