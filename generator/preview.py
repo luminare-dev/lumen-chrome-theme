@@ -90,7 +90,10 @@ def render(theme_dir: Path) -> Image.Image:
         bg = Image.open(theme_dir / images["theme_ntp_background"]).convert("RGB")
         left = (bg.width - W) // 2
         im.paste(bg.crop((left, 0, left + W, H - ntp_top)), (0, ntp_top))
-    d.text((W // 2, ntp_top + 150), "Lumen", font=font(54, True), fill=c["ntp_text"], anchor="mm")
+    # With a background image Chrome draws the logo and the shortcut titles white.
+    on_image = "theme_ntp_background" in images
+    title = (255, 255, 255) if on_image else c["ntp_text"]
+    d.text((W // 2, ntp_top + 150), "Lumen", font=font(54, True), fill=title, anchor="mm")
     d.rounded_rectangle((W // 2 - 290, ntp_top + 210, W // 2 + 290, ntp_top + 256), radius=23,
                         fill=c["omnibox_background"])
     d.text((W // 2 - 260, ntp_top + 233), "Search the web", font=font(15), fill=c["omnibox_text"], anchor="lm")
@@ -98,7 +101,7 @@ def render(theme_dir: Path) -> Image.Image:
         cx = W // 2 - 240 + i * 120
         d.rounded_rectangle((cx - 28, ntp_top + 300, cx + 28, ntp_top + 356), radius=14, fill=c["toolbar"])
         d.text((cx, ntp_top + 328), label[0], font=font(20, True), fill=c["ntp_link"], anchor="mm")
-        d.text((cx, ntp_top + 372), label, font=f_small, fill=c["ntp_text"], anchor="mm")
+        d.text((cx, ntp_top + 372), label, font=f_small, fill=title, anchor="mm")
     d.text((W // 2, H - 40), "Customize this page", font=f_small, fill=c["ntp_link"], anchor="mm")
     return im
 

@@ -13,8 +13,11 @@ network (its Content Security Policy forbids it) and stores nothing.
 2. **Mode**: dark or light. The colour list and the preview follow the mode; each mode is its own
    theme.
 3. **Name**: shown in `chrome://extensions` as *Lumen &lt;name&gt; Dark* or *Light*.
-4. **Accent light** and **New tab pattern**: the soft light at the top of the new tab page and an
-   optional dot grid.
+4. **Accent light**, **New tab pattern** and **New tab image**: the soft light at the top of the
+   new tab page, an optional dot grid, and whether the theme ships a new tab image at all.
+   Chrome treats any new tab image as a photo and draws its logo and the shortcut titles white,
+   so *Automatic* uses an image only for dark themes that have the light or the dots; light
+   themes get a plain background colour and keep the normal logo.
 5. **Colours**: every colour role of the token schema. Roles marked *panel only* do not change the
    browser theme but are kept for the export.
 6. Contrast warnings list every text pair below WCAG 4.5:1 (3:1 for icons). They do not block the
@@ -37,7 +40,8 @@ python3 generator/lumen_chrome.py tokens.json --out dist --pattern none --no-zip
 python3 generator/validate.py dist/lumen-*-dark dist/lumen-*-light
 ```
 
-`--ntp-size WxH` changes the new tab image (default 2560x1440). Only the Python standard library
+`--ntp-image auto|on|off` chooses the new tab image (auto: dark themes with the light or the
+dots), `--ntp-size WxH` its size (default 2560x1440). Only the Python standard library
 is needed. To preview, install Pillow and run `python3 generator/preview.py dist previews`.
 
 ## Token mapping

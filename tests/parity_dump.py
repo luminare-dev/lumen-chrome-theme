@@ -23,12 +23,16 @@ CASES["empty"] = {}
 
 
 def main() -> None:
-    out = {"cases": CASES, "manifests": {}, "problems": {}}
+    out = {"cases": CASES, "manifests": {}, "problems": {}, "defaults": {}}
     for name, doc in CASES.items():
         tokens, problems = lc.normalize(doc)
         out["problems"][name] = problems
         for mode in lc.MODES:
-            out["manifests"][f"{name}/{mode}"] = lc.manifest_bytes(lc.build_manifest(tokens, mode, "1.2.3")).decode()
+            for image in (True, False):
+                out["manifests"][f"{name}/{mode}/{int(image)}"] = lc.manifest_bytes(
+                    lc.build_manifest(tokens, mode, "1.2.3", image)).decode()
+            for pattern in lc.PATTERNS:
+                out["defaults"][f"{name}/{mode}/{pattern}"] = lc.default_ntp_image(mode, pattern, tokens)
     json.dump(out, sys.stdout, ensure_ascii=False)
 
 
