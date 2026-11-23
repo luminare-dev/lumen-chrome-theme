@@ -1,0 +1,8 @@
+{
+    "name": "lumen-ci-screenshots",
+    "private": true,
+    "description": "CI only: Playwright for the new tab screenshots (ci/playwright/ntp.mjs).",
+    "dependencies": {
+        "playwright": "1.49.1"
+    }
+}

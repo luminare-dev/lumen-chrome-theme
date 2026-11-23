@@ -1,0 +1,6 @@
+# Pillow for generator/preview.py (CI only; the generator itself needs no packages).
+# Version and the sha256 of the CPython 3.12 manylinux x86_64 wheel (the ubuntu-24.04 runner's
+# python3) read from PyPI on 2026-11-23.
+# Install with:  pip install --require-hashes --only-binary=:all: -r requirements-preview.txt
+pillow==13.0.0 \
+    --hash=sha256:42d63be3af4f9b951b199b0a9d23365d37ab14687e6d77b74940432c8515c4ca
