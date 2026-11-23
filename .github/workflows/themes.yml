@@ -48,7 +48,8 @@ jobs:
         run: |
           "$RUNNER_TEMP/venv/bin/python" generator/preview.py dist previews
           if ! cmp -s previews/contact-sheet.png docs/previews/contact-sheet.png; then
-            echo "::notice title=previews::docs/previews/ differs from this build; copy the previews artifact into docs/previews/"
+            echo "::notice title=previews::docs/previews/ differs from this build;" \
+              "copy the previews artifact into docs/previews/"
           fi
 
       - name: Keep the themes
