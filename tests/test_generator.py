@@ -119,6 +119,16 @@ class PackageTests(unittest.TestCase):
         for p in sorted(self.out.iterdir()):
             self.assertEqual(validate.check(p), [], p.name)
 
+    def test_new_tab_image_only_in_dark_themes_with_a_light_or_dots(self):
+        for p in sorted(self.out.glob("lumen-*-*")):
+            if p.suffix:
+                continue
+            has = (p / "images" / "ntp_background.png").is_file()
+            m = json.loads((p / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(has, "theme_ntp_background" in m["theme"]["images"], p.name)
+            want = p.name.endswith("-dark") and p.name.split("-")[1] in ("luminare", "aurora")
+            self.assertEqual(has, want, p.name)
+
     def test_zip_is_deterministic(self):
         tokens, _ = lc.normalize({})
         a, b = self.out / "a.zip", self.out / "b.zip"

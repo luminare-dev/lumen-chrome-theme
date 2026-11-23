@@ -69,6 +69,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.5); }
 .b-tiles div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; }
 .b-tiles span { width: 44px; height: 44px; border-radius: 12px; background: var(--toolbar); color: var(--ntp-link); display: grid; place-items: center; font-weight: 700; font-size: 16px; }
 .b-link { color: var(--ntp-link); font-size: 11px; }
+/* With a background image Chrome draws the logo and shortcut titles white with a shadow. */
+.has-image .b-ntp h3, .has-image .b-tiles div { color: #FFFFFF; text-shadow: 0 0 6px rgb(0 0 0 / 0.6); }
 .icons { display: flex; gap: 12px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 0.85rem; }
 .icons img { image-rendering: auto; }
 footer.page { padding: 0 24px 24px; color: var(--muted); font-size: 0.85rem; }
@@ -99,6 +101,12 @@ footer.page a { color: var(--accent); }
             <select id="pattern">
                 <option value="dots">Dot grid</option>
                 <option value="none">None</option>
+            </select>
+            <label for="ntp-image">New tab image</label>
+            <select id="ntp-image">
+                <option value="auto">Automatic (dark themes only)</option>
+                <option value="on">Always</option>
+                <option value="off">Never (plain colour)</option>
             </select>
         </div>
         <div class="card">
@@ -601,7 +609,8 @@ footer.page a { color: var(--accent); }
     }
 
     /* The manifest as the exact text generator/lumen_chrome.py writes (json.dumps indent=2, number lists on one line). */
-    function manifestText(tokens, mode, version) {
+    function manifestText(tokens, mode, version, ntpImage) {
+        if (ntpImage === undefined) ntpImage = true;
         var colors = themeColors(tokens, mode);
         var icon = colors.filter(function (e) { return e[0] === "toolbar_button_icon"; })[0][1];
         var desc = tokens.meta.description || "A Lumen browser theme.";
@@ -623,8 +632,8 @@ footer.page a { color: var(--accent); }
         L.push([
             ["theme_frame", "frame"], ["theme_frame_inactive", "frame_inactive"],
             ["theme_frame_incognito", "frame_incognito"], ["theme_frame_incognito_inactive", "frame_incognito_inactive"],
-            ["theme_toolbar", "toolbar"], ["theme_ntp_background", "ntp_background"]
-        ].map(function (e) { return '      "' + e[0] + '": "images/' + e[1] + '.png"'; }).join(",\n"));
+            ["theme_toolbar", "toolbar"]
+        ].concat(ntpImage ? [["theme_ntp_background", "ntp_background"]] : []).map(function (e) { return '      "' + e[0] + '": "images/' + e[1] + '.png"'; }).join(",\n"));
         L.push("    },");
         L.push('    "colors": {');
         L.push(colors.map(function (e) { return '      "' + e[0] + '": ' + list(e[1]); }).join(",\n"));
@@ -635,8 +644,10 @@ footer.page a { color: var(--accent); }
             .map(function (e) { return '      "' + e[0] + '": ' + list(e[1]); }).join(",\n"));
         L.push("    },");
         L.push('    "properties": {');
-        L.push('      "ntp_background_alignment": "top",');
-        L.push('      "ntp_background_repeat": "no-repeat",');
+        if (ntpImage) {
+            L.push('      "ntp_background_alignment": "top",');
+            L.push('      "ntp_background_repeat": "no-repeat",');
+        }
         L.push('      "ntp_logo_alternate": ' + (mode === "dark" ? 1 : 0));
         L.push("    }");
         L.push("  }");
@@ -660,10 +671,14 @@ footer.page a { color: var(--accent); }
         }).filter(Boolean);
     }
 
+    /* Chrome treats any new tab image as a photo (white logo and titles, a dark scrim at the top):
+       fine for dark themes, so light themes and plain backgrounds get no image. */
+    function defaultNtpImage(mode, pattern, tokens) { return mode === "dark" && (tokens.glow || pattern === "dots"); }
+
     root.LumenChrome = {
         ROLES: ROLES, MODES: MODES, ICON_SIZES: ICON_SIZES, normalize: normalize, rgb: rgb, hex: hex, mix: mix,
         contrast: contrast, themeColors: themeColors, themeName: themeName, manifestText: manifestText,
-        contrastProblems: contrastProblems, palette: palette
+        contrastProblems: contrastProblems, palette: palette, defaultNtpImage: defaultNtpImage
     };
 })(typeof window !== "undefined" ? window : globalThis);
 </script>
@@ -687,6 +702,7 @@ footer.page a { color: var(--accent); }
     var doc = clone(DEFAULT);       /* the full token document: kept whole for export */
     var mode = "dark";
     var pattern = "dots";
+    var ntpChoice = "auto";
     var patternTouched = false;
     var $ = function (id) { return document.getElementById(id); };
 
@@ -795,6 +811,8 @@ footer.page a { color: var(--accent); }
         return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type: "application/zip" });
     }
 
+    function ntpOn(t, m) { return ntpChoice === "auto" ? LC.defaultNtpImage(m, pattern, t) : ntpChoice === "on"; }
+
     function buildFiles(t, m) {
         var colors = {};
         LC.themeColors(t, m).forEach(function (e) { colors[e[0]] = e[1]; });
@@ -805,13 +823,13 @@ footer.page a { color: var(--accent); }
             "images/frame_inactive.png": frameCanvas(colors.frame_inactive, p.accent, strong / 2 * on),
             "images/frame_incognito.png": frameCanvas(colors.frame_incognito, d.accent, 0.06 * on),
             "images/frame_incognito_inactive.png": frameCanvas(colors.frame_incognito_inactive, d.accent, 0),
-            "images/toolbar.png": solidCanvas(colors.toolbar),
-            "images/ntp_background.png": ntpCanvas(t, m, pattern, 2560, 1440)
+            "images/toolbar.png": solidCanvas(colors.toolbar)
         };
+        if (ntpOn(t, m)) jobs["images/ntp_background.png"] = ntpCanvas(t, m, pattern, 2560, 1440);
         LC.ICON_SIZES.forEach(function (s) { jobs["icons/icon" + s + ".png"] = iconCanvas(t, m, s); });
         var names = Object.keys(jobs);
         return Promise.all(names.map(function (n) { return toBytes(jobs[n]); })).then(function (bytes) {
-            var files = { "manifest.json": new TextEncoder().encode(LC.manifestText(t, m, VERSION)) };
+            var files = { "manifest.json": new TextEncoder().encode(LC.manifestText(t, m, VERSION, ntpOn(t, m))) };
             names.forEach(function (n, i) { files[n] = bytes[i]; });
             return files;
         });
@@ -882,7 +900,12 @@ footer.page a { color: var(--accent); }
         var p = LC.palette(t, mode);
         $("b-frame").style.backgroundImage = "url(" + frameCanvas(LC.themeColors(t, mode)[0][1], p.accent, t.glow ? (mode === "dark" ? 0.10 : 0.06) : 0).toDataURL() + ")";
         clearTimeout(ntpTimer);
-        ntpTimer = setTimeout(function () { $("b-ntp").style.backgroundImage = "url(" + ntpCanvas(t, mode, pattern, 1280, 720).toDataURL() + ")"; }, 60);
+        $("ntp-image").value = ntpChoice;
+        var on = ntpOn(t, mode);
+        $("browser").classList.toggle("has-image", on);
+        ntpTimer = setTimeout(function () {
+            $("b-ntp").style.backgroundImage = on ? "url(" + ntpCanvas(t, mode, pattern, 1280, 720).toDataURL() + ")" : "none";
+        }, 60);
         $("icon128").src = iconCanvas(t, mode, 128).toDataURL();
         $("icon16").src = iconCanvas(t, mode, 16).toDataURL();
         var notes = $("notes"); notes.textContent = "";
@@ -915,6 +938,7 @@ footer.page a { color: var(--accent); }
     $("name").addEventListener("input", function () { doc.meta = doc.meta || {}; doc.meta.name = this.value.replace(/[<>]/g, ""); });
     $("glow").addEventListener("change", function () { doc.layout = doc.layout || {}; doc.layout.backgroundGlow = this.checked; update(false); });
     $("pattern").addEventListener("change", function () { pattern = this.value; patternTouched = true; update(false); });
+    $("ntp-image").addEventListener("change", function () { ntpChoice = this.value; update(false); });
     $("dl-one").addEventListener("click", function () { download([mode]); });
     $("dl-both").addEventListener("click", function () { download(["dark", "light"]); });
     $("export").addEventListener("click", function () {
