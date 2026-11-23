@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Lumen theme customizer</title>
+<style>
+:root {
+    --bg: #F3F6FB; --panel: #FFFFFF; --sunken: #E8EDF5; --line: #D6DDEA; --text: #0A1224; --muted: #4F5B73;
+    --accent: #1F47C4; --on-accent: #FFFFFF; --warn: #9A4503; --ok: #027A3D;
+    color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+    :root { --bg: #060B17; --panel: #0F1A30; --sunken: #0A1224; --line: #24345A; --text: #F3F6FB; --muted: #B7C1D3;
+        --accent: #5BDFFF; --on-accent: #0A1224; --warn: #FFB334; --ok: #58DD70; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header.page { padding: 20px 24px 8px; }
+header.page h1 { margin: 0; font-size: 1.45rem; }
+header.page p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+main { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 20px; padding: 16px 24px 32px; align-items: start; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 12px 16px 24px; } header.page { padding: 16px 16px 4px; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.card + .card { margin-top: 16px; }
+.card h2 { margin: 0 0 10px; font-size: 1rem; }
+label { display: block; font-size: 0.85rem; color: var(--muted); margin: 10px 0 4px; }
+select, input[type="text"], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--sunken); color: var(--text); font: inherit; }
+textarea { min-height: 140px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--text); padding: 7px 16px; font: inherit; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.roles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.role { display: flex; align-items: center; gap: 8px; }
+.role input[type="color"] { width: 34px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; flex: none; }
+.role input[type="text"] { padding: 5px 7px; font: 12px ui-monospace, Menlo, Consolas, monospace; }
+.role span { font-size: 0.78rem; color: var(--muted); display: block; line-height: 1.2; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--sunken); color: var(--text); border-radius: 10px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn:focus-visible, .seg button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: center; margin-top: 10px; color: var(--text); font-size: 0.9rem; }
+.notes { margin: 8px 0 0; padding-left: 18px; font-size: 0.85rem; }
+.notes li.warn { color: var(--warn); }
+.notes li.ok { color: var(--ok); list-style: none; margin-left: -18px; }
+.status { font-size: 0.85rem; color: var(--muted); min-height: 1.3em; margin-top: 8px; }
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); width: min(640px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+
+/* The mock browser window: every colour comes from the theme. */
+.stage { position: sticky; top: 16px; }
+.browser { border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.55); border: 1px solid var(--line); font: 12px system-ui, sans-serif; }
+.b-frame { height: 40px; display: flex; align-items: flex-end; padding: 0 8px; gap: 2px; background-color: var(--frame); background-repeat: repeat-x; position: relative; }
+.b-tab { height: 32px; width: 180px; display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--tab-bg-text); border-radius: 10px 10px 0 0; white-space: nowrap; overflow: hidden; }
+.b-tab + .b-tab:not(.active) { border-left: 1px solid color-mix(in srgb, var(--tab-bg-text) 35%, transparent); border-radius: 0; height: 18px; margin-bottom: 7px; }
+.b-tab.active { background: var(--toolbar); color: var(--tab-text); }
+.b-tab i { width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 50%; flex: none; }
+.b-win { position: absolute; right: 12px; top: 10px; color: var(--tab-bg-text); letter-spacing: 14px; }
+.b-toolbar { background: var(--toolbar); padding: 6px 10px; display: flex; gap: 10px; align-items: center; color: var(--icon); }
+.b-toolbar b { font-weight: 400; font-size: 15px; width: 18px; text-align: center; }
+.b-omni { flex: 1; background: var(--omni-bg); color: var(--omni-text); border-radius: 999px; padding: 7px 14px; }
+.b-bookmarks { background: var(--toolbar); color: var(--bookmark); padding: 4px 14px 7px; display: flex; gap: 26px; }
+.b-ntp { aspect-ratio: 16 / 9; background-color: var(--ntp-bg); background-position: center top; background-repeat: no-repeat; background-size: 200%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: var(--ntp-text); }
+.b-ntp h3 { margin: 0; font-size: 34px; letter-spacing: -0.02em; }
+.b-search { width: 56%; background: var(--omni-bg); color: var(--omni-text); border-radius: 999px; padding: 10px 18px; }
+.b-tiles { display: flex; gap: 18px; }
+.b-tiles div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; }
+.b-tiles span { width: 44px; height: 44px; border-radius: 12px; background: var(--toolbar); color: var(--ntp-link); display: grid; place-items: center; font-weight: 700; font-size: 16px; }
+.b-link { color: var(--ntp-link); font-size: 11px; }
+.icons { display: flex; gap: 12px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 0.85rem; }
+.icons img { image-rendering: auto; }
+footer.page { padding: 0 24px 24px; color: var(--muted); font-size: 0.85rem; }
+footer.page a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="page">
+    <h1>Lumen theme customizer</h1>
+    <p>Pick a preset or set your own colours, check the preview and download a browser theme as a ZIP.
+    Everything happens in this page; nothing is uploaded. Token files are the same as for the Lumen panel themes.</p>
+</header>
+<main>
+    <section aria-label="Settings">
+        <div class="card">
+            <h2>Start</h2>
+            <label for="preset">Preset</label>
+            <select id="preset"></select>
+            <label>Mode (a browser theme cannot switch by itself, so each mode is its own theme)</label>
+            <div class="seg" role="group" aria-label="Mode">
+                <button type="button" data-mode="dark" aria-pressed="true">Dark</button>
+                <button type="button" data-mode="light" aria-pressed="false">Light</button>
+            </div>
+            <label for="name">Name</label>
+            <input type="text" id="name" maxlength="60" autocomplete="off">
+            <label class="check"><input type="checkbox" id="glow"> Accent light at the top of the new tab page</label>
+            <label for="pattern">New tab pattern</label>
+            <select id="pattern">
+                <option value="dots">Dot grid</option>
+                <option value="none">None</option>
+            </select>
+        </div>
+        <div class="card">
+            <h2>Colours (<span id="mode-label">dark</span>)</h2>
+            <div class="roles" id="roles"></div>
+            <ul class="notes" id="notes" aria-live="polite"></ul>
+        </div>
+        <div class="card">
+            <h2>Files</h2>
+            <div class="row">
+                <button type="button" class="btn primary" id="dl-one">Download theme ZIP</button>
+                <button type="button" class="btn" id="dl-both">Dark and light</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+                <button type="button" class="btn" id="import">Import tokens</button>
+                <button type="button" class="btn" id="export">Export tokens</button>
+                <button type="button" class="btn" id="reset">Reset</button>
+            </div>
+            <input type="file" id="file" accept="application/json,.json" hidden>
+            <div class="status" id="status" role="status"></div>
+        </div>
+    </section>
+    <section class="stage" aria-label="Preview">
+        <div class="browser" id="browser">
+            <div class="b-frame" id="b-frame">
+                <div class="b-tab active"><i></i>New Tab</div>
+                <div class="b-tab"><i></i>Documentation</div>
+                <div class="b-tab"><i></i>Pull requests</div>
+                <div class="b-win" aria-hidden="true">–□×</div>
+            </div>
+            <div class="b-toolbar"><b>←</b><b>→</b><b>↻</b><div class="b-omni">Search or type a web address</div><b>☆</b><b>⋮</b></div>
+            <div class="b-bookmarks"><span>Docs</span><span>Status</span><span>Panel</span><span>Mail</span></div>
+            <div class="b-ntp" id="b-ntp">
+                <h3>Lumen</h3>
+                <div class="b-search">Search the web</div>
+                <div class="b-tiles">
+                    <div><span>D</span>Docs</div><div><span>S</span>Status</div><div><span>P</span>Panel</div><div><span>M</span>Mail</div>
+                </div>
+                <div class="b-link">Customize this page</div>
+            </div>
+        </div>
+        <div class="icons"><img id="icon128" width="64" height="64" alt="Theme icon"><img id="icon16" width="16" height="16" alt=""><span>Theme icon (no logo, accent colours)</span></div>
+    </section>
+</main>
+<footer class="page">
+    Load the ZIP: unzip it, open <code>chrome://extensions</code>, turn on developer mode and choose “Load unpacked”.
+    A Luminare Development open-source project, MIT licence.
+</footer>
+
+<dialog id="import-dialog">
+    <form method="dialog">
+        <h2 style="margin-top:0">Import tokens</h2>
+        <p style="color:var(--muted);margin:0">Paste a Lumen token JSON (an export from a Lumen panel theme works) or pick a file.</p>
+        <textarea id="import-text" aria-label="Token JSON" spellcheck="false"></textarea>
+        <div class="row" style="margin-top:10px">
+            <button class="btn primary" value="paste" type="submit">Import</button>
+            <button class="btn" value="file" type="submit">Choose a file</button>
+            <button class="btn" value="cancel" type="submit">Cancel</button>
+        </div>
+    </form>
+</dialog>
+
+<script type="application/json" id="lumen-presets">
+{
+ "luminare": {
+  "version": 1,
+  "meta": {
+   "name": "Luminare",
+   "description": "Night and Mist surfaces with the Lumen cyan and Royal blue accents."
+  },
+  "mode": {
+   "default": "system",
+   "allowToggle": true
+  },
+  "color": {
+   "dark": {
+    "canvas": "#060B17",
+    "surfaceSunken": "#0A1224",
+    "surface": "#0F1A30",
+    "surfaceRaised": "#17243F",
+    "border": "#24345A",
+    "text": "#F3F6FB",
+    "textMuted": "#B7C1D3",
+    "accent": "#5BDFFF",
+    "accentSecondary": "#2B8FF0",
+    "accentText": "#5BDFFF",
+    "accentContrast": "#0A1224",
+    "success": "#58DD70",
+    "warning": "#FFB334",
+    "danger": "#FF6B61",
+    "info": "#7CC4FF",
+    "focus": "#06F2C4"
+   },
+   "light": {
+    "canvas": "#F3F6FB",
+    "surfaceSunken": "#E8EDF5",
+    "surface": "#FFFFFF",
+    "surfaceRaised": "#F5F8FC",
+    "border": "#D6DDEA",
+    "text": "#0A1224",
+    "textMuted": "#4F5B73",
+    "accent": "#1F47C4",
+    "accentSecondary": "#2D63DE",
+    "accentText": "#1F47C4",
+    "accentContrast": "#FFFFFF",
+    "success": "#027A3D",
+    "warning": "#9A4503",
+    "danger": "#B71920",
+    "info": "#1F47C4",
+    "focus": "#2B8FF0"
+   }
+  },
+  "typography": {
+   "display": "Sora",
+   "body": "Sora",
+   "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+   "stylesheet": "",
+   "scale": 1,
+   "headingWeight": 600
+  },
+  "radius": {
+   "base": 14
+  },
+  "spacing": {
+   "base": 4
+  },
+  "density": "comfortable",
+  "elevation": {
+   "shadow": "soft",
+   "borders": true
+  },
+  "layout": {
+   "sidebar": "floating",
+   "sidebarWidth": 280,
+   "indicator": "pill",
+   "contentWidth": "full",
+   "backgroundGlow": true
+  },
+  "branding": {
+   "productName": "",
+   "logoDark": "/lumen/brand/luminare-mark.svg",
+   "logoLight": "/lumen/brand/luminare-mark-brand-deep.svg",
+   "favicon": "/lumen/brand/favicon.svg",
+   "loginBackground": ""
+  },
+  "customCss": ""
+ },
+ "graphite": {
+  "version": 1,
+  "meta": {
+   "name": "Graphite",
+   "description": "Neutral greys with a blue accent and no Luminare logos."
+  },
+  "mode": {
+   "default": "system",
+   "allowToggle": true
+  },
+  "color": {
+   "dark": {
+    "canvas": "#0B0C0F",
+    "surfaceSunken": "#101216",
+    "surface": "#16181D",
+    "surfaceRaised": "#1E2128",
+    "border": "#2D313A",
+    "text": "#F2F3F5",
+    "textMuted": "#B4B9C3",
+    "accent": "#6EA8FE",
+    "accentSecondary": "#4C8DF6",
+    "accentText": "#8DBBFF",
+    "accentContrast": "#0B0C0F",
+    "success": "#58DD70",
+    "warning": "#FFB334",
+    "danger": "#FF6B61",
+    "info": "#7CC4FF",
+    "focus": "#8DBBFF"
+   },
+   "light": {
+    "canvas": "#F4F5F7",
+    "surfaceSunken": "#EBEDF0",
+    "surface": "#FFFFFF",
+    "surfaceRaised": "#F7F8FA",
+    "border": "#D9DCE2",
+    "text": "#14161A",
+    "textMuted": "#555B66",
+    "accent": "#1D5BD8",
+    "accentSecondary": "#2F6FEA",
+    "accentText": "#1D5BD8",
+    "accentContrast": "#FFFFFF",
+    "success": "#027A3D",
+    "warning": "#9A4503",
+    "danger": "#B71920",
+    "info": "#1F47C4",
+    "focus": "#2F6FEA"
+   }
+  },
+  "typography": {
+   "display": "Sora",
+   "body": "Sora",
+   "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+   "stylesheet": "",
+   "scale": 1,
+   "headingWeight": 600
+  },
+  "radius": {
+   "base": 10
+  },
+  "spacing": {
+   "base": 4
+  },
+  "density": "comfortable",
+  "elevation": {
+   "shadow": "medium",
+   "borders": true
+  },
+  "layout": {
+   "sidebar": "flush",
+   "sidebarWidth": 280,
+   "indicator": "bar",
+   "contentWidth": "full",
+   "backgroundGlow": false
+  },
+  "branding": {
+   "productName": "",
+   "logoDark": "",
+   "logoLight": "",
+   "favicon": "",
+   "loginBackground": ""
+  },
+  "customCss": ""
+ },
+ "aurora": {
+  "version": 1,
+  "meta": {
+   "name": "Aurora",
+   "description": "Deep violet surfaces with a mint to violet accent."
+  },
+  "mode": {
+   "default": "system",
+   "allowToggle": true
+  },
+  "color": {
+   "dark": {
+    "canvas": "#0B0716",
+    "surfaceSunken": "#110B22",
+    "surface": "#181030",
+    "surfaceRaised": "#22183F",
+    "border": "#352757",
+    "text": "#F5F1FF",
+    "textMuted": "#C5BCE0",
+    "accent": "#B79CFF",
+    "accentSecondary": "#06F2C4",
+    "accentText": "#C7B3FF",
+    "accentContrast": "#120A24",
+    "success": "#58DD70",
+    "warning": "#FFB334",
+    "danger": "#FF6B61",
+    "info": "#7CC4FF",
+    "focus": "#06F2C4"
+   },
+   "light": {
+    "canvas": "#F6F3FC",
+    "surfaceSunken": "#EEE8F8",
+    "surface": "#FFFFFF",
+    "surfaceRaised": "#FAF8FE",
+    "border": "#DDD3F0",
+    "text": "#1A1030",
+    "textMuted": "#574C70",
+    "accent": "#6A3FD1",
+    "accentSecondary": "#7C4DE8",
+    "accentText": "#5B33BD",
+    "accentContrast": "#FFFFFF",
+    "success": "#027A3D",
+    "warning": "#9A4503",
+    "danger": "#B71920",
+    "info": "#1F47C4",
+    "focus": "#7C4DE8"
+   }
+  },
+  "typography": {
+   "display": "Sora",
+   "body": "Sora",
+   "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+   "stylesheet": "",
+   "scale": 1,
+   "headingWeight": 600
+  },
+  "radius": {
+   "base": 18
+  },
+  "spacing": {
+   "base": 4
+  },
+  "density": "comfortable",
+  "elevation": {
+   "shadow": "soft",
+   "borders": true
+  },
+  "layout": {
+   "sidebar": "floating",
+   "sidebarWidth": 280,
+   "indicator": "glow",
+   "contentWidth": "full",
+   "backgroundGlow": true
+  },
+  "branding": {
+   "productName": "",
+   "logoDark": "/lumen/brand/luminare-mark.svg",
+   "logoLight": "/lumen/brand/luminare-mark-brand-deep.svg",
+   "favicon": "/lumen/brand/favicon.svg",
+   "loginBackground": ""
+  },
+  "customCss": ""
+ },
+ "contrast": {
+  "version": 1,
+  "meta": {
+   "name": "High contrast",
+   "description": "Black and white surfaces, strong borders and large focus rings."
+  },
+  "mode": {
+   "default": "system",
+   "allowToggle": true
+  },
+  "color": {
+   "dark": {
+    "canvas": "#000000",
+    "surfaceSunken": "#000000",
+    "surface": "#0A0A0A",
+    "surfaceRaised": "#161616",
+    "border": "#8A8A8A",
+    "text": "#FFFFFF",
+    "textMuted": "#E0E0E0",
+    "accent": "#FFD43B",
+    "accentSecondary": "#FFD43B",
+    "accentText": "#FFD43B",
+    "accentContrast": "#000000",
+    "success": "#7CFF8A",
+    "warning": "#FFD43B",
+    "danger": "#FF8A80",
+    "info": "#9CD3FF",
+    "focus": "#FFD43B"
+   },
+   "light": {
+    "canvas": "#FFFFFF",
+    "surfaceSunken": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surfaceRaised": "#F2F2F2",
+    "border": "#4A4A4A",
+    "text": "#000000",
+    "textMuted": "#262626",
+    "accent": "#0033A0",
+    "accentSecondary": "#0033A0",
+    "accentText": "#0033A0",
+    "accentContrast": "#FFFFFF",
+    "success": "#00662A",
+    "warning": "#7A3E00",
+    "danger": "#A30010",
+    "info": "#0033A0",
+    "focus": "#0033A0"
+   }
+  },
+  "typography": {
+   "display": "Sora",
+   "body": "Sora",
+   "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+   "stylesheet": "",
+   "scale": 1,
+   "headingWeight": 600
+  },
+  "radius": {
+   "base": 6
+  },
+  "spacing": {
+   "base": 4
+  },
+  "density": "comfortable",
+  "elevation": {
+   "shadow": "none",
+   "borders": true
+  },
+  "layout": {
+   "sidebar": "flush",
+   "sidebarWidth": 280,
+   "indicator": "bar",
+   "contentWidth": "full",
+   "backgroundGlow": false
+  },
+  "branding": {
+   "productName": "",
+   "logoDark": "",
+   "logoLight": "",
+   "favicon": "",
+   "loginBackground": ""
+  },
+  "customCss": ""
+ }
+}
+</script>
+
+<script id="lumen-core">
+/* Lumen browser theme core: token document -> theme manifest. Mirrors generator/lumen_chrome.py;
+   tests/test_parity.mjs checks both produce the same manifest bytes. No DOM access here. */
+(function (root) {
+    "use strict";
+    var ROLES = ["canvas", "surfaceSunken", "surface", "surfaceRaised", "border", "text", "textMuted", "accent",
+        "accentSecondary", "accentText", "accentContrast", "success", "warning", "danger", "info", "focus"];
+    var MODES = ["dark", "light"];
+    var HEX = /^#[0-9A-Fa-f]{6}$/;
+    var ICON_SIZES = [16, 32, 48, 128];
+
+    function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
+
+    function normalize(doc, fallback) {
+        var problems = [];
+        if (!isObj(doc)) { return { tokens: normalize(fallback, fallback).tokens, problems: ["(document)"] }; }
+        if (doc.version !== undefined && doc.version !== 1) problems.push("version");
+        var out = { meta: {}, color: {}, glow: true };
+        var meta = isObj(doc.meta) ? doc.meta : {};
+        ["name", "description"].forEach(function (k) {
+            var v = k in meta ? meta[k] : fallback.meta[k];
+            if (typeof v !== "string" || v.length > 200 || /[<>]/.test(v)) { problems.push("meta." + k); v = fallback.meta[k]; }
+            out.meta[k] = v.trim();
+        });
+        var colors = isObj(doc.color) ? doc.color : {};
+        MODES.forEach(function (mode) {
+            var given = isObj(colors[mode]) ? colors[mode] : {};
+            var pal = {};
+            ROLES.forEach(function (role) {
+                var v = role in given ? given[role] : fallback.color[mode][role];
+                if (typeof v !== "string" || !HEX.test(v)) { problems.push("color." + mode + "." + role); v = fallback.color[mode][role]; }
+                pal[role] = v.toUpperCase();
+            });
+            out.color[mode] = pal;
+        });
+        var layout = isObj(doc.layout) ? doc.layout : {};
+        var glow = "backgroundGlow" in layout ? layout.backgroundGlow : true;
+        if (typeof glow !== "boolean") { problems.push("layout.backgroundGlow"); glow = true; }
+        out.glow = glow;
+        return { tokens: out, problems: problems };
+    }
+
+    function rgb(hex) { return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; }
+    function hex(c) { return "#" + c.map(function (v) { return (v < 16 ? "0" : "") + v.toString(16); }).join("").toUpperCase(); }
+    function mix(a, b, t) { return [0, 1, 2].map(function (i) { return Math.floor(a[i] + (b[i] - a[i]) * t + 0.5); }); }
+    function lin(v) { var s = v / 255; return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); }
+    function luminance(c) { return 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]); }
+    function contrast(a, b) { var la = luminance(a), lb = luminance(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); }
+    function separate(c, ref, toward, minimum) {
+        minimum = minimum || 1.12;
+        var out = c, step = 0;
+        while (contrast(out, ref) < minimum && step < 10) { step += 1; out = mix(c, toward, 0.04 * step); }
+        return out;
+    }
+    function palette(tokens, mode) {
+        var p = {};
+        ROLES.forEach(function (r) { p[r] = rgb(tokens.color[mode][r]); });
+        return p;
+    }
+
+    function themeColors(tokens, mode) {
+        var p = palette(tokens, mode), d = palette(tokens, "dark"), black = [0, 0, 0];
+        var frame, frameInactive;
+        if (mode === "dark") { frame = p.canvas; frameInactive = mix(frame, p.surfaceSunken, 0.5); }
+        else { frame = mix(p.surfaceSunken, p.border, 0.45); frameInactive = mix(frame, p.canvas, 0.5); }
+        var toolbar = separate(p.surface, frame, p.text);
+        var omnibox = separate(p.surfaceSunken, toolbar, p.text, 1.08);
+        var incognito = mix(d.canvas, black, 0.25);
+        var incognitoInactive = mix(incognito, d.surfaceSunken, 0.5);
+        var icon = mix(p.textMuted, p.text, 0.35);
+        return [
+            ["frame", frame], ["frame_inactive", frameInactive],
+            ["frame_incognito", incognito], ["frame_incognito_inactive", incognitoInactive],
+            ["background_tab", frame], ["background_tab_inactive", frameInactive],
+            ["background_tab_incognito", incognito], ["background_tab_incognito_inactive", incognitoInactive],
+            ["toolbar", toolbar], ["toolbar_text", p.text], ["toolbar_button_icon", icon],
+            ["tab_text", p.text], ["tab_background_text", p.textMuted],
+            ["tab_background_text_inactive", mix(p.textMuted, frameInactive, 0.25)],
+            ["tab_background_text_incognito", d.textMuted],
+            ["tab_background_text_incognito_inactive", mix(d.textMuted, incognitoInactive, 0.25)],
+            ["bookmark_text", p.text], ["omnibox_background", omnibox], ["omnibox_text", p.text],
+            ["ntp_background", p.canvas], ["ntp_text", p.text], ["ntp_link", p.accentText], ["ntp_header", p.accent]
+        ];
+    }
+
+    function round3(x) { return Math.round(x * 1000) / 1000; }
+    function hslTint(c) {
+        /* colorsys.rgb_to_hls, returned as [h, s, l] */
+        var r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+        var maxc = Math.max(r, g, b), minc = Math.min(r, g, b), l = (minc + maxc) / 2;
+        if (minc === maxc) return [0, 0, round3(l)];
+        var s = l <= 0.5 ? (maxc - minc) / (maxc + minc) : (maxc - minc) / (2 - maxc - minc);
+        var rc = (maxc - r) / (maxc - minc), gc = (maxc - g) / (maxc - minc), bc = (maxc - b) / (maxc - minc);
+        var h = r === maxc ? bc - gc : g === maxc ? 2 + rc - bc : 4 + gc - rc;
+        h = ((h / 6) % 1 + 1) % 1;
+        return [round3(h), round3(s), round3(l)];
+    }
+
+    function themeName(tokens, mode) {
+        return ("Lumen " + (tokens.meta.name || "Custom") + " " + mode.charAt(0).toUpperCase() + mode.slice(1)).slice(0, 75);
+    }
+
+    /* The manifest as the exact text generator/lumen_chrome.py writes (json.dumps indent=2, number lists on one line). */
+    function manifestText(tokens, mode, version) {
+        var colors = themeColors(tokens, mode);
+        var icon = colors.filter(function (e) { return e[0] === "toolbar_button_icon"; })[0][1];
+        var desc = tokens.meta.description || "A Lumen browser theme.";
+        if (desc.length > 132) desc = desc.slice(0, 131).replace(/\s+$/, "") + "…";
+        function s(v) { return JSON.stringify(v).replace(/[\u007f-￿]/g, function (ch) { return ch; }); }
+        function num(x) { return Number.isInteger(x) ? String(x) : String(x); }
+        function list(a) { return "[" + a.map(num).join(", ") + "]"; }
+        var L = [];
+        L.push("{");
+        L.push('  "manifest_version": 3,');
+        L.push('  "name": ' + s(themeName(tokens, mode)) + ",");
+        L.push('  "version": ' + s(version) + ",");
+        L.push('  "description": ' + s(desc) + ",");
+        L.push('  "icons": {');
+        L.push(ICON_SIZES.map(function (n) { return '    "' + n + '": "icons/icon' + n + '.png"'; }).join(",\n"));
+        L.push("  },");
+        L.push('  "theme": {');
+        L.push('    "images": {');
+        L.push([
+            ["theme_frame", "frame"], ["theme_frame_inactive", "frame_inactive"],
+            ["theme_frame_incognito", "frame_incognito"], ["theme_frame_incognito_inactive", "frame_incognito_inactive"],
+            ["theme_toolbar", "toolbar"], ["theme_ntp_background", "ntp_background"]
+        ].map(function (e) { return '      "' + e[0] + '": "images/' + e[1] + '.png"'; }).join(",\n"));
+        L.push("    },");
+        L.push('    "colors": {');
+        L.push(colors.map(function (e) { return '      "' + e[0] + '": ' + list(e[1]); }).join(",\n"));
+        L.push("    },");
+        L.push('    "tints": {');
+        L.push([["buttons", hslTint(icon)], ["frame", [-1, -1, -1]], ["frame_inactive", [-1, -1, -1]],
+            ["frame_incognito", [-1, -1, -1]], ["frame_incognito_inactive", [-1, -1, -1]], ["background_tab", [-1, -1, -1]]]
+            .map(function (e) { return '      "' + e[0] + '": ' + list(e[1]); }).join(",\n"));
+        L.push("    },");
+        L.push('    "properties": {');
+        L.push('      "ntp_background_alignment": "top",');
+        L.push('      "ntp_background_repeat": "no-repeat",');
+        L.push('      "ntp_logo_alternate": ' + (mode === "dark" ? 1 : 0));
+        L.push("    }");
+        L.push("  }");
+        L.push("}");
+        return L.join("\n") + "\n";
+    }
+
+    var CONTRAST_PAIRS = [
+        ["tab_text", "toolbar", 4.5, "Tab title on the toolbar"], ["bookmark_text", "toolbar", 4.5, "Bookmarks on the toolbar"],
+        ["tab_background_text", "frame", 4.5, "Background tab titles on the frame"],
+        ["omnibox_text", "omnibox_background", 4.5, "Address field text"],
+        ["ntp_text", "ntp_background", 4.5, "New tab text"], ["ntp_link", "ntp_background", 4.5, "New tab links"],
+        ["toolbar_button_icon", "toolbar", 3.0, "Toolbar icons"]
+    ];
+    function contrastProblems(tokens, mode) {
+        var c = {};
+        themeColors(tokens, mode).forEach(function (e) { c[e[0]] = e[1]; });
+        return CONTRAST_PAIRS.map(function (p) {
+            var r = contrast(c[p[0]], c[p[1]]);
+            return r < p[2] ? { label: p[3], ratio: r, minimum: p[2] } : null;
+        }).filter(Boolean);
+    }
+
+    root.LumenChrome = {
+        ROLES: ROLES, MODES: MODES, ICON_SIZES: ICON_SIZES, normalize: normalize, rgb: rgb, hex: hex, mix: mix,
+        contrast: contrast, themeColors: themeColors, themeName: themeName, manifestText: manifestText,
+        contrastProblems: contrastProblems, palette: palette
+    };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<script id="lumen-ui">
+(function () {
+    "use strict";
+    var LC = window.LumenChrome;
+    var VERSION = "0.1.0";
+    var PRESETS = JSON.parse(document.getElementById("lumen-presets").textContent);
+    var ORDER = ["luminare", "graphite", "aurora", "contrast"];
+    var DEFAULT = PRESETS.luminare;
+    var ROLE_LABELS = {
+        canvas: "Page background", surfaceSunken: "Address field", surface: "Toolbar, active tab", surfaceRaised: "Raised parts",
+        border: "Borders, light frame", text: "Text", textMuted: "Background tabs, icons", accent: "Accent",
+        accentSecondary: "Accent end", accentText: "Links", accentContrast: "Text on accent (icon)",
+        success: "Success", warning: "Warning", danger: "Danger", info: "Info", focus: "Focus"
+    };
+    var USED = ["canvas", "surfaceSunken", "surface", "border", "text", "textMuted", "accent", "accentSecondary", "accentText", "accentContrast"];
+
+    var doc = clone(DEFAULT);       /* the full token document: kept whole for export */
+    var mode = "dark";
+    var pattern = "dots";
+    var patternTouched = false;
+    var $ = function (id) { return document.getElementById(id); };
+
+    function clone(v) { return JSON.parse(JSON.stringify(v)); }
+    function tokens() { return LC.normalize(doc, DEFAULT).tokens; }
+    function status(msg) { $("status").textContent = msg; }
+    function slug(name) { return (name || "custom").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "custom"; }
+
+    /* ---------------------------------------------------------------- images (canvas) */
+    function canvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+    function css(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a === undefined ? 1 : a) + ")"; }
+
+    function frameCanvas(base, accent, strength) {
+        var c = canvas(32, 128), g = c.getContext("2d");
+        g.fillStyle = css(base); g.fillRect(0, 0, 32, 128);
+        if (strength > 0) {
+            var grad = g.createLinearGradient(0, 0, 0, 64);
+            for (var i = 0; i <= 8; i++) { var t = i / 8; grad.addColorStop(t, css(accent, strength * Math.pow(1 - t, 2))); }
+            g.fillStyle = grad; g.fillRect(0, 0, 32, 64);
+        }
+        return c;
+    }
+    function solidCanvas(colour) { var c = canvas(32, 128), g = c.getContext("2d"); g.fillStyle = css(colour); g.fillRect(0, 0, 32, 128); return c; }
+
+    function ntpCanvas(t, m, pat, w, h) {
+        var p = LC.palette(t, m), c = canvas(w, h), g = c.getContext("2d");
+        g.fillStyle = css(p.canvas); g.fillRect(0, 0, w, h);
+        if (t.glow) {
+            var dark = m === "dark";
+            [[0.30 * w, -0.08 * h, 0.28 * w, 0.30 * w, p.accent, dark ? 0.34 : 0.20],
+             [0.72 * w, -0.04 * h, 0.26 * w, 0.27 * w, p.accentSecondary, dark ? 0.26 : 0.15]].forEach(function (l) {
+                g.save();
+                g.translate(l[0], l[1]); g.scale(1, l[3] / l[2]);
+                var grad = g.createRadialGradient(0, 0, 0, 0, 0, l[2]);
+                for (var i = 0; i <= 16; i++) { var d = i / 16; grad.addColorStop(d, css(l[4], l[5] * Math.pow(1 - d, 1.6))); }
+                g.fillStyle = grad; g.beginPath(); g.arc(0, 0, l[2], 0, Math.PI * 2); g.fill();
+                g.restore();
+            });
+        }
+        if (pat === "dots") {
+            var spacing = Math.max(8, Math.round(w / 90)), alpha = m === "dark" ? 0.14 : 0.10, bottom = 0.55 * h, edge = 0.08 * w;
+            for (var y = 0; y < bottom; y += spacing) {
+                for (var x = Math.floor(spacing / 2); x < w; x += spacing) {
+                    var a = alpha * (1 - y / bottom) * Math.min(1, x / edge, (w - 1 - x) / edge);
+                    if (a <= 0) continue;
+                    g.fillStyle = css(p.accentText, a); g.fillRect(x, y, 2, 2);
+                }
+            }
+        }
+        return c;
+    }
+
+    function iconCanvas(t, m, size) {
+        var p = LC.palette(t, m), c = canvas(size, size), g = c.getContext("2d"), r = 0.22 * size;
+        var grad = g.createLinearGradient(0, 0, size, size);
+        grad.addColorStop(0, css(p.accent)); grad.addColorStop(1, css(p.accentSecondary));
+        g.fillStyle = grad;
+        g.beginPath();
+        g.moveTo(r, 0); g.arcTo(size, 0, size, size, r); g.arcTo(size, size, 0, size, r); g.arcTo(0, size, 0, 0, r); g.arcTo(0, 0, size, 0, r);
+        g.closePath(); g.fill();
+        g.strokeStyle = css(p.accentContrast); g.fillStyle = css(p.accentContrast); g.lineWidth = 0.09 * size;
+        g.beginPath(); g.arc(size / 2, size / 2, 0.25 * size, 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.arc(size / 2, size / 2, 0.09 * size * 0.55, 0, Math.PI * 2); g.fill();
+        return c;
+    }
+
+    function toBytes(c) {
+        return new Promise(function (resolve, reject) {
+            c.toBlob(function (b) {
+                if (!b) { reject(new Error("the browser could not encode a PNG")); return; }
+                b.arrayBuffer().then(function (ab) { resolve(new Uint8Array(ab)); }, reject);
+            }, "image/png");
+        });
+    }
+
+    /* ---------------------------------------------------------------- ZIP (stored entries) */
+    var CRC = (function () {
+        var t = new Uint32Array(256);
+        for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+        return t;
+    })();
+    function crc32(d) { var c = 0xFFFFFFFF; for (var i = 0; i < d.length; i++) c = CRC[(c ^ d[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+    function zip(files) {
+        var enc = new TextEncoder(), parts = [], central = [], offset = 0;
+        var DOS_TIME = 0, DOS_DATE = ((2026 - 1980) << 9) | (1 << 5) | 1;
+        Object.keys(files).sort().forEach(function (name) {
+            var data = files[name], nb = enc.encode(name), crc = crc32(data);
+            var h = new DataView(new ArrayBuffer(30));
+            h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+            h.setUint16(10, DOS_TIME, true); h.setUint16(12, DOS_DATE, true); h.setUint32(14, crc, true);
+            h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+            parts.push(new Uint8Array(h.buffer), nb, data);
+            var cd = new DataView(new ArrayBuffer(46));
+            cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 0x031E, true); cd.setUint16(6, 20, true); cd.setUint16(8, 0x0800, true);
+            cd.setUint16(10, 0, true); cd.setUint16(12, DOS_TIME, true); cd.setUint16(14, DOS_DATE, true); cd.setUint32(16, crc, true);
+            cd.setUint32(20, data.length, true); cd.setUint32(24, data.length, true); cd.setUint16(28, nb.length, true);
+            cd.setUint32(38, (0o100644 << 16) >>> 0, true); cd.setUint32(42, offset, true);
+            central.push(new Uint8Array(cd.buffer), nb);
+            offset += 30 + nb.length + data.length;
+        });
+        var cdSize = central.reduce(function (s, a) { return s + a.length; }, 0);
+        var end = new DataView(new ArrayBuffer(22));
+        var count = Object.keys(files).length;
+        end.setUint32(0, 0x06054b50, true); end.setUint16(8, count, true); end.setUint16(10, count, true);
+        end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+        return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type: "application/zip" });
+    }
+
+    function buildFiles(t, m) {
+        var colors = {};
+        LC.themeColors(t, m).forEach(function (e) { colors[e[0]] = e[1]; });
+        var p = LC.palette(t, m), d = LC.palette(t, "dark");
+        var strong = m === "dark" ? 0.10 : 0.06, on = t.glow ? 1 : 0;
+        var jobs = {
+            "images/frame.png": frameCanvas(colors.frame, p.accent, strong * on),
+            "images/frame_inactive.png": frameCanvas(colors.frame_inactive, p.accent, strong / 2 * on),
+            "images/frame_incognito.png": frameCanvas(colors.frame_incognito, d.accent, 0.06 * on),
+            "images/frame_incognito_inactive.png": frameCanvas(colors.frame_incognito_inactive, d.accent, 0),
+            "images/toolbar.png": solidCanvas(colors.toolbar),
+            "images/ntp_background.png": ntpCanvas(t, m, pattern, 2560, 1440)
+        };
+        LC.ICON_SIZES.forEach(function (s) { jobs["icons/icon" + s + ".png"] = iconCanvas(t, m, s); });
+        var names = Object.keys(jobs);
+        return Promise.all(names.map(function (n) { return toBytes(jobs[n]); })).then(function (bytes) {
+            var files = { "manifest.json": new TextEncoder().encode(LC.manifestText(t, m, VERSION)) };
+            names.forEach(function (n, i) { files[n] = bytes[i]; });
+            return files;
+        });
+    }
+
+    function save(blob, name) {
+        var url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    }
+
+    function download(modes) {
+        var t = tokens();
+        status("Building…");
+        modes.reduce(function (chain, m) {
+            return chain.then(function () {
+                return buildFiles(t, m).then(function (files) { save(zip(files), "lumen-" + slug(t.meta.name) + "-" + m + ".zip"); });
+            });
+        }, Promise.resolve()).then(function () {
+            status("Downloaded " + modes.map(function (m) { return LC.themeName(t, m); }).join(" and ") + ".");
+        }, function (err) { status("Could not build the theme: " + err.message); });
+    }
+
+    /* ---------------------------------------------------------------- UI */
+    function renderRoles() {
+        var box = $("roles"); box.textContent = "";
+        LC.ROLES.forEach(function (role) {
+            var value = tokens().color[mode][role];
+            var wrap = document.createElement("div"); wrap.className = "role";
+            var picker = document.createElement("input"); picker.type = "color"; picker.value = value.toLowerCase();
+            picker.setAttribute("aria-label", ROLE_LABELS[role] + " colour");
+            var right = document.createElement("div");
+            var text = document.createElement("input"); text.type = "text"; text.value = value; text.maxLength = 7; text.spellcheck = false;
+            text.setAttribute("aria-label", ROLE_LABELS[role] + " hex value");
+            var cap = document.createElement("span"); cap.textContent = ROLE_LABELS[role] + (USED.indexOf(role) < 0 ? " (panel only)" : "");
+            right.appendChild(text); right.appendChild(cap);
+            wrap.appendChild(picker); wrap.appendChild(right); box.appendChild(wrap);
+            function set(v) {
+                doc.color = doc.color || {}; doc.color[mode] = doc.color[mode] || {};
+                doc.color[mode][role] = v.toUpperCase(); update(false);
+            }
+            picker.addEventListener("input", function () { text.value = picker.value.toUpperCase(); set(picker.value); });
+            text.addEventListener("change", function () {
+                var v = text.value.trim(); if (v[0] !== "#") v = "#" + v;
+                if (/^#[0-9A-Fa-f]{6}$/.test(v)) { picker.value = v.toLowerCase(); text.value = v.toUpperCase(); set(v); }
+                else { text.value = tokens().color[mode][role]; status("Use a colour like #1F47C4."); }
+            });
+        });
+    }
+
+    var ntpTimer = null;
+    function update(full) {
+        var t = tokens();
+        if (full) renderRoles();
+        $("mode-label").textContent = mode;
+        $("name").value = (doc.meta && doc.meta.name) || "";
+        $("glow").checked = t.glow;
+        if (!patternTouched) pattern = t.glow ? "dots" : "none";
+        $("pattern").value = pattern;
+        document.querySelectorAll(".seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === mode)); });
+        var colors = {};
+        LC.themeColors(t, mode).forEach(function (e) { colors[e[0]] = "rgb(" + e[1].join(",") + ")"; });
+        var s = $("browser").style;
+        [["--frame", "frame"], ["--toolbar", "toolbar"], ["--tab-text", "tab_text"], ["--tab-bg-text", "tab_background_text"],
+         ["--icon", "toolbar_button_icon"], ["--omni-bg", "omnibox_background"], ["--omni-text", "omnibox_text"],
+         ["--bookmark", "bookmark_text"], ["--ntp-bg", "ntp_background"], ["--ntp-text", "ntp_text"], ["--ntp-link", "ntp_link"]]
+            .forEach(function (e) { s.setProperty(e[0], colors[e[1]]); });
+        var p = LC.palette(t, mode);
+        $("b-frame").style.backgroundImage = "url(" + frameCanvas(LC.themeColors(t, mode)[0][1], p.accent, t.glow ? (mode === "dark" ? 0.10 : 0.06) : 0).toDataURL() + ")";
+        clearTimeout(ntpTimer);
+        ntpTimer = setTimeout(function () { $("b-ntp").style.backgroundImage = "url(" + ntpCanvas(t, mode, pattern, 1280, 720).toDataURL() + ")"; }, 60);
+        $("icon128").src = iconCanvas(t, mode, 128).toDataURL();
+        $("icon16").src = iconCanvas(t, mode, 16).toDataURL();
+        var notes = $("notes"); notes.textContent = "";
+        var probs = LC.contrastProblems(t, mode);
+        if (!probs.length) { var ok = document.createElement("li"); ok.className = "ok"; ok.textContent = "All text pairs reach WCAG contrast."; notes.appendChild(ok); }
+        probs.forEach(function (pr) {
+            var li = document.createElement("li"); li.className = "warn";
+            li.textContent = pr.label + ": " + pr.ratio.toFixed(2) + ":1, needs " + pr.minimum + ":1";
+            notes.appendChild(li);
+        });
+    }
+
+    function load(newDoc, label) {
+        var res = LC.normalize(newDoc, DEFAULT);
+        doc = clone(newDoc && typeof newDoc === "object" && !Array.isArray(newDoc) ? newDoc : DEFAULT);
+        patternTouched = false;
+        update(true);
+        status(res.problems.length ? label + ": replaced invalid " + res.problems.join(", ") + " with defaults."
+            : label + " loaded.");
+    }
+
+    ORDER.forEach(function (k) {
+        var o = document.createElement("option"); o.value = k; o.textContent = PRESETS[k].meta.name; $("preset").appendChild(o);
+    });
+    var custom = document.createElement("option"); custom.value = ""; custom.textContent = "Imported"; custom.hidden = true; $("preset").appendChild(custom);
+    $("preset").addEventListener("change", function () { if (PRESETS[this.value]) load(clone(PRESETS[this.value]), PRESETS[this.value].meta.name); });
+    document.querySelectorAll(".seg button").forEach(function (b) {
+        b.addEventListener("click", function () { mode = b.dataset.mode; update(true); });
+    });
+    $("name").addEventListener("input", function () { doc.meta = doc.meta || {}; doc.meta.name = this.value.replace(/[<>]/g, ""); });
+    $("glow").addEventListener("change", function () { doc.layout = doc.layout || {}; doc.layout.backgroundGlow = this.checked; update(false); });
+    $("pattern").addEventListener("change", function () { pattern = this.value; patternTouched = true; update(false); });
+    $("dl-one").addEventListener("click", function () { download([mode]); });
+    $("dl-both").addEventListener("click", function () { download(["dark", "light"]); });
+    $("export").addEventListener("click", function () {
+        var out = clone(doc); out.version = 1;
+        save(new Blob([JSON.stringify(out, null, 4) + "\n"], { type: "application/json" }), "lumen-" + slug(tokens().meta.name) + ".json");
+        status("Token file exported.");
+    });
+    $("reset").addEventListener("click", function () { $("preset").value = "luminare"; load(clone(DEFAULT), "Luminare"); });
+    $("import").addEventListener("click", function () { $("import-text").value = ""; $("import-dialog").showModal(); });
+    function parseAndLoad(text, label) {
+        var parsed;
+        try { parsed = JSON.parse(text); } catch (e) { status(label + " is not valid JSON."); return; }
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) { status(label + " is not a token document."); return; }
+        $("preset").value = "";
+        load(parsed, label);
+    }
+    $("import-dialog").addEventListener("close", function () {
+        var v = this.returnValue;
+        if (v === "paste" && $("import-text").value.trim()) parseAndLoad($("import-text").value, "Pasted tokens");
+        else if (v === "file") $("file").click();
+    });
+    $("file").addEventListener("change", function () {
+        var f = this.files && this.files[0]; if (!f) return;
+        if (f.size > 200000) { status("That file is too large for a token document."); return; }
+        f.text().then(function (text) { parseAndLoad(text, f.name); });
+        this.value = "";
+    });
+    $("preset").value = "luminare";
+    update(true);
+})();
+</script>
+</body>
+</html>
