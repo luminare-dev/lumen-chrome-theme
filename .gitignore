@@ -10,3 +10,4 @@ node_modules/
 # Never commit environment files
 .env
 .env.*
+_site/
