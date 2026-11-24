@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lumen browser themes: turn a Lumen token document and a mode into a Chrome theme package.
+"""Lumen Chrome theme: turn a Lumen token document and a mode into a Chrome theme package.
 
     python3 generator/lumen_chrome.py presets/luminare.json --mode dark --out dist/luminare-dark
     python3 generator/lumen_chrome.py --all --out dist          # every preset, dark and light, plus ZIPs

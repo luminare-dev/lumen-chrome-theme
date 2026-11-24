@@ -8,5 +8,5 @@ tests/test_forbidden_words.py | * | test sentences that must trigger the rules
 tests/test_check_pr_title.py | * | test titles that must be rejected for their wording
 scripts/set_byline.py | placeholder | prints the names of the placeholders to fill again after a brand swap
 LICENSE | sell | the licence grants the right to "sell copies" of the software
-@name | chrome | descriptive use: the repository holds themes for the Chrome browser ("theme for Chrome"), like registry names such as ansible-collection-<name>; the README title and header leave the mark out
+@name | chrome | descriptive use: the product is the Lumen Chrome theme, a theme for the Chrome browser (repository name and README title), like registry names such as ansible-collection-<name>
 docs/install.md | Web Store | names the browser's own extension gallery as a future install route for the free themes; nothing is sold

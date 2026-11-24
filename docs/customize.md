@@ -1,4 +1,4 @@
-# Customize a Lumen browser theme
+# Customize the Lumen Chrome theme
 
 There are two ways, and both give the same `manifest.json` for the same token file (a CI test
 compares them byte for byte).

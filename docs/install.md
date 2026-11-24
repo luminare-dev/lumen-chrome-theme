@@ -1,4 +1,4 @@
-# Install a Lumen browser theme
+# Install the Lumen Chrome theme
 
 Each theme is one mode: install the dark or the light one (a browser theme cannot follow the
 system setting). Incognito windows always use the dark palette.

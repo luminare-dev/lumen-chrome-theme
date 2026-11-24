@@ -2,7 +2,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/brand/readme-header-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/brand/readme-header-light.svg">
-  <img alt="Lumen browser themes" src="docs/brand/readme-header-light.svg">
+  <img alt="Lumen Chrome theme" src="docs/brand/readme-header-light.svg">
 </picture>
 
 <!-- byline:studio -->
@@ -14,7 +14,7 @@
 
 <!-- header:end -->
 
-# Lumen browser themes
+# Lumen Chrome theme
 
 Light and dark Lumen themes for Google Chrome (and other Chromium browsers that take Chrome
 themes), generated from the same design tokens as the Lumen panel themes, plus a one-page
