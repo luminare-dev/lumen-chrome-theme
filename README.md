@@ -44,8 +44,9 @@ out, with the contrast checked on the way.
   Dark themes get a soft accent light and a dot grid on the new tab page; light themes keep a
   plain background, because Chrome draws a white logo on any new tab image.
 - Text pairs are checked against WCAG 2.2 (4.5:1 for text, 3:1 for toolbar icons) in the build.
-- [The customizer](customizer/index.html): one HTML file that works offline and makes no network
-  requests. Pick a preset and a mode or set every colour, see a live browser mock-up and download
+- [The customizer](https://luminare-dev.github.io/lumen-chrome-theme/) (source:
+  [customizer/index.html](customizer/index.html)): one HTML file that works offline and makes no
+  network requests. Pick a preset and a mode or set every colour, see a live browser mock-up and download
   a ready theme ZIP. Token files import and export in the same format as the Lumen panel themes.
 
 ## Quickstart
@@ -62,8 +63,9 @@ pick the folder. Details, removal and other browsers: [docs/install.md](docs/ins
 
 ## Make your own
 
-Open `customizer/index.html` in any current browser (download the file, no server needed), or
-build from a token file:
+Use the customizer on [GitHub Pages](https://luminare-dev.github.io/lumen-chrome-theme/), open
+`customizer/index.html` in any current browser (download the file, no server needed), or build
+from a token file:
 
 ```bash
 python3 generator/lumen_chrome.py my-tokens.json --out dist          # dark and light
