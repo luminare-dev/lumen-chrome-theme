@@ -4,7 +4,7 @@ __pycache__/
 .venv/
 # Build output (generator/lumen_chrome.py, generator/preview.py)
 dist/
-previews/
+/previews/
 # Local tool installs
 node_modules/
 # Never commit environment files
